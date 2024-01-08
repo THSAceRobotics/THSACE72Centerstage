@@ -28,7 +28,10 @@ public class PropDetectionTest extends LinearOpMode {
         vp.resumeStreaming();
 
         while(opModeIsActive()) {
-
+            telemetry.addData("Num. Contours Detected:", PropDetectionPipeline.numContours);
+            telemetry.addData("LargestContourArea:", PropDetectionPipeline.largestContourArea);
+            telemetry.addData("largestContourX: ", PropDetectionPipeline.largestContourX);
+            telemetry.addData("larestContourY", PropDetectionPipeline.largestContourY);
         }
     }
 }

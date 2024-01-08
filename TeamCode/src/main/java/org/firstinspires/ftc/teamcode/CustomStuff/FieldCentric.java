@@ -64,9 +64,9 @@ public class FieldCentric extends LinearOpMode {
         while (opModeIsActive()) {
             double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-            double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
-            double x = gamepad1.left_stick_x; // Counteract imperfect strafing
-            double rx = gamepad1.right_stick_x;
+            double y = -Math.pow(gamepad1.left_stick_y,2); // Remember, Y stick value is reversed
+            double x = Math.pow(gamepad1.left_stick_x,2); // Counteract imperfect strafing
+            double rx = Math.pow(gamepad1.right_stick_x,2);
 
             if (!isFieldCentric) {
                 x *= 1.1;
