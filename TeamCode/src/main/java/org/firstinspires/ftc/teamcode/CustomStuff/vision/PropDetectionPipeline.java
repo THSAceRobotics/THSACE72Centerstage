@@ -28,9 +28,12 @@ public class PropDetectionPipeline implements VisionProcessor {
     public static int hsvHigh3 = 255;
     public static int numContours = 0;
 
+    private final double X_MIN_RIGHT, Y_MIN_RIGHT, X_MIN_LEFT, Y_MIN_LEFT, X_MIN_MID, Y_MIN_MID, X_MAX_RIGHT, Y_MAX_RIGHT, X_MAX_LEFT, Y_MAX_LEFT, X_MAX_MID, Y_MAX_MID;
+
     public static double largestContourArea = 0;
     public static double largestContourX, largestContourY;
     private MatOfPoint largestContour;
+    public int location;
 
     @Override
     public void init(int width, int height, CameraCalibration calibration) {
@@ -82,6 +85,15 @@ public class PropDetectionPipeline implements VisionProcessor {
             largestContourX = (moment.m10 / moment.m00);
             largestContourY = (moment.m01 / moment.m00);
         }
+
+        if(X_MIN_LEFT < largestContourX && largestContourX < X_MAX_LEFT && Y_MIN_LEFT < largestContourY && largestContourY < Y_MAX_LEFT) {
+            location = 1;
+        } else if (X_MIN_MID < largestContourX && largestContourX < X_MAX_MID && Y_MIN_MID < largestContourY && largestContourY < Y_MAX_MID) {
+            location = 2;
+        } else {
+            location = 3;
+        }
+
         edges.copyTo(input);
         return null;
     }
