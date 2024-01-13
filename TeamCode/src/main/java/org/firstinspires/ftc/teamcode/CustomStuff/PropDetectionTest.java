@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.CustomStuff;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -7,6 +8,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.CustomStuff.vision.PropDetectionPipeline;
 import org.firstinspires.ftc.vision.VisionPortal;
 @TeleOp
+@Disabled
 public class PropDetectionTest extends LinearOpMode {
     public static int hsvLow1 = 36;
     public static int hsvLow2 = 0;

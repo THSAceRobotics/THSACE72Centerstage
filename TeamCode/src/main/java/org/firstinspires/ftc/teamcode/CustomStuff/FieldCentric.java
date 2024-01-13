@@ -2,9 +2,15 @@ package org.firstinspires.ftc.teamcode.CustomStuff;
 
 import android.animation.ArgbEvaluator;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.arcrobotics.ftclib.gamepad.ToggleButtonReader;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -19,34 +25,37 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @TeleOp(name = "fieldctr")
+@Config
+@Disabled
 public class FieldCentric extends LinearOpMode {
 
     private DcMotor fL, fR, bL, bR;
-    private DcMotor leftSlide, rightSlide;
+    private DcMotor leftSlide, rightSlide, intake;
     private MecanumDrive drive;
     private GamepadEx driverOp;
     private Servo claw;
-    private Servo spin1, spin2;
+    private Servo leftSpin, rightSpin;
+    public static double servoPos = 0;
     private IMU imu;
 
 
     @Override
     public void runOpMode() {
         /* instantiate motors */
-        fL = hardwareMap.get(DcMotor.class,"LeftFront");
-        fR = hardwareMap.get(DcMotor.class,"RightFront");
-        bL = hardwareMap.get(DcMotor.class,"LeftBack");
-        bR = hardwareMap.get(DcMotor.class,"RightBack");
+        fL = hardwareMap.get(DcMotor.class,"leftFront");
+        fR = hardwareMap.get(DcMotor.class,"rightFront");
+        bL = hardwareMap.get(DcMotor.class,"leftBack");
+        bR = hardwareMap.get(DcMotor.class,"rightBack");
         leftSlide = hardwareMap.get(DcMotor.class, "leftSlide");
         rightSlide = hardwareMap.get(DcMotor.class,"rightSlide");
+        intake = hardwareMap.get(DcMotor.class, "intake");
         claw = hardwareMap.get(Servo.class, "claw");
         imu = hardwareMap.get(IMU.class, "imu");
-        spin1 = hardwareMap.get(Servo.class, "spin1");
-        spin2 = hardwareMap.get(Servo.class,"spin2");
+        leftSpin = hardwareMap.get(Servo.class, "leftSpin");
+        rightSpin = hardwareMap.get(Servo.class,"rightSpin");
 
         driverOp = new GamepadEx(gamepad1);
-        boolean isFieldCentric = false;
-        double slidePower = 1;
+        double slidePower = .7;
         imu.resetYaw();
         leftSlide.setDirection(DcMotorSimple.Direction.REVERSE); //might need to change
         rightSlide.setDirection(DcMotorSimple.Direction.FORWARD); //might need to change
@@ -54,33 +63,23 @@ public class FieldCentric extends LinearOpMode {
         bL.setDirection(DcMotorSimple.Direction.REVERSE);
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        spin1.setDirection(Servo.Direction.REVERSE); // might need to change
-        spin2.setDirection(Servo.Direction.FORWARD); // might need to change
+        leftSpin.setDirection(Servo.Direction.REVERSE); // might need to change
+        rightSpin.setDirection(Servo.Direction.FORWARD); // might need to change
+        ToggleButtonReader isFieldCentric = new ToggleButtonReader(driverOp, GamepadKeys.Button.B);
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         waitForStart();
 
-        liftControl(50);
 
         while (opModeIsActive()) {
             double angle = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-            double y = -Math.pow(gamepad1.left_stick_y,2); // Remember, Y stick value is reversed
-            double x = Math.pow(gamepad1.left_stick_x,2); // Counteract imperfect strafing
-            double rx = Math.pow(gamepad1.right_stick_x,2);
+            double y = -gamepad1.left_stick_y; // Remember, Y stick value is reversed
+            double x = gamepad1.left_stick_x; // Counteract imperfect strafing
+            double rx = gamepad1.right_stick_x;
 
-            if (!isFieldCentric) {
-                x *= 1.1;
-                double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
-                double frontLeftPower = (y + x + rx) / denominator;
-                double backLeftPower = (y - x + rx) / denominator;
-                double frontRightPower = (y - x - rx) / denominator;
-                double backRightPower = (y + x - rx) / denominator;
 
-                fL.setPower(frontLeftPower * .7);
-                bL.setPower(backLeftPower * .7);
-                fR.setPower(frontRightPower * .7);
-                bR.setPower(backRightPower * .7);
-            } else {
+            if (isFieldCentric.getState()) {
                 double rotX = x * Math.cos(-angle) - y * Math.sin(-angle);
                 double rotY = x * Math.sin(-angle) + y * Math.cos(-angle);
                 rotX = rotX * 1.1;
@@ -95,53 +94,88 @@ public class FieldCentric extends LinearOpMode {
                 bL.setPower(backLeftPower);
                 fR.setPower(frontRightPower);
                 bR.setPower(backRightPower);
+            } else {
+                x *= 1.1;
+                double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+                double frontLeftPower = (y + x + rx) / denominator;
+                double backLeftPower = (y - x + rx) / denominator;
+                double frontRightPower = (y - x - rx) / denominator;
+                double backRightPower = (y + x - rx) / denominator;
+
+                fL.setPower(frontLeftPower * .7);
+                bL.setPower(backLeftPower * .7);
+                fR.setPower(frontRightPower * .7);
+                bR.setPower(backRightPower * .7);
             }
 
             if(gamepad2.dpad_down) {
-                leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                if(slidePower > 0) {
-                    slidePower *= -1;
-                }
+                    leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    if (slidePower > 0) {
+                        slidePower *= -1;
+                    }
             } else if (gamepad2.dpad_up) {
-                leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                if(slidePower < 0) {
-                    slidePower *= -1;
-                }
-            } else {
+                    leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    if (slidePower < 0) {
+                        slidePower *= -1;
+                    }
+            } else if (gamepad2.dpad_right){
                 liftControl(leftSlide.getCurrentPosition());
+            } else if (gamepad2.dpad_left) {
+                liftControl(0);
             }
 
-            if (gamepad2.x) {
-                claw.setPosition(.45);
-            } else if (gamepad2.y || !gamepad2.x) {
+            if(gamepad1.right_bumper) {
+                intake.setPower(1);
+            } else if(gamepad1.left_bumper) {
+                intake.setPower(-1);
+            } else {
+                intake.setPower(0);
+            }
+
+
+            if (gamepad2.right_bumper) {
+                claw.setPosition(.85);
+            } else if (gamepad2.left_bumper) {
                 claw.setPosition(0);
             }
 
             if(gamepad2.a) {
-                //spinArm();
+                spinArm(.88);
             } else if (gamepad2.b) {
-                //spinArm();
+                spinArm(servoPos);
+            } else if (gamepad2.x) {
+                spinArm(.585);
             }
 
-            if(gamepad1.right_bumper) {
-                isFieldCentric = !isFieldCentric;
-            }
             leftSlide.setPower(slidePower);
             rightSlide.setPower(slidePower);
+
+            telemetry.addData("servo: ", servoPos);
+            telemetry.addData("rightslidepos: ", rightSlide.getCurrentPosition());
+            telemetry.update();
         }
     }
 
     public void spinArm(double pos) {
-        spin1.setPosition(pos);
-        spin2.setPosition(pos);
+        leftSpin.setPosition(pos);
+        rightSpin.setPosition(pos);
     }
 
-    public void liftControl(int pos) {
+    private void liftControl(int pos) {
         leftSlide.setTargetPosition(pos);
         rightSlide.setTargetPosition(pos);
         leftSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         rightSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        leftSlide.setPower(.7);
+        rightSlide.setPower(.7);
+    }
+
+    public void up() {
+        liftControl(100);
+        spinArm(.95);
+        liftControl(600);
+        spinArm(.585);
     }
 }

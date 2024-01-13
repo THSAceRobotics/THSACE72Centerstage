@@ -1,11 +1,9 @@
 package org.firstinspires.ftc.teamcode.CustomStuff;
 
-import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.Actions;
 import com.acmerobotics.roadrunner.InstantAction;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.acmerobotics.roadrunner.SequentialAction;
-import com.acmerobotics.roadrunner.Trajectory;
-import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
 import com.acmerobotics.roadrunner.Vector2d;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -17,17 +15,11 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.CustomStuff.vision.PropDetectionPipeline;
-import org.firstinspires.ftc.teamcode.MecanumDrive.FollowTrajectoryAction;
-
 import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.vision.VisionPortal;
-import com.acmerobotics.roadrunner.ftc.Actions;
-
-
-import kotlin.sequences.Sequence;
 
 @Autonomous
-public class AutoBlueLeft extends LinearOpMode {
+public class AutoBlueRight extends LinearOpMode {
     private DcMotor leftSlide, rightSlide;
     private MecanumDrive drive;
     private GamepadEx driverOp;
@@ -58,18 +50,18 @@ public class AutoBlueLeft extends LinearOpMode {
 
 
         drive = new MecanumDrive(hardwareMap, new Pose2d(24-9, 72-9, Math.PI));
-        Pose2d startPose = new Pose2d(24-9, 72-9, Math.PI);
+        Pose2d startPose = new Pose2d(-33, 72-9, Math.PI);
         Vector2d endVector = new Vector2d(51, 60);
         SequentialAction left = new SequentialAction(
-                drive.actionBuilder(startPose).strafeToLinearHeading(new Vector2d(9/Math.sqrt(2), 36+(9/Math.sqrt(2))), Math.toRadians(225)).build(),
+                drive.actionBuilder(startPose).strafeToLinearHeading(new Vector2d(-48+9/Math.sqrt(2), 34+(9/Math.sqrt(2))), Math.toRadians(225)).build(),
                 new InstantAction(() -> liftControl(50)),
-                drive.actionBuilder(drive.pose).strafeToLinearHeading(new Vector2d(51, 40), Math.toRadians(180)).build(),
+                drive.actionBuilder(drive.pose).setTangent(Math.PI+1.3613902).splineToLinearHeading(new Pose2d(-16, 6, Math.toRadians(180)), Math.toRadians(0)).strafeToConstantHeading(new Vector2d(20, 6)).setTangent(Math.toRadians(0)).splineToLinearHeading(new Pose2d(51, 28, Math.toRadians(180)), Math.toRadians(90)).build(),
                 new InstantAction(() -> liftControl(50)),
                 drive.actionBuilder(drive.pose).strafeToConstantHeading(endVector).build()
         );
 
         SequentialAction middle = new SequentialAction(
-                drive.actionBuilder(startPose).strafeToConstantHeading(new Vector2d(15, 30)).build(),
+                drive.actionBuilder(startPose).strafeToConstantHeading(new Vector2d(15, 33)).build(),
                 new InstantAction(() -> liftControl(50)),
                 drive.actionBuilder(drive.pose).strafeToLinearHeading(new Vector2d(51, 34), Math.toRadians(180)).build(),
                 new InstantAction(() -> liftControl(50)),
@@ -91,13 +83,14 @@ public class AutoBlueLeft extends LinearOpMode {
 
         waitForStart();
         vp.stopStreaming();
+        /*
         if(location == 1) {
             Actions.runBlocking(left);
         } else if (location == 2) {
             Actions.runBlocking(middle);
         } else {
             Actions.runBlocking(right);
-        }
+        } */
     }
 
     public void liftControl(int pos) {
