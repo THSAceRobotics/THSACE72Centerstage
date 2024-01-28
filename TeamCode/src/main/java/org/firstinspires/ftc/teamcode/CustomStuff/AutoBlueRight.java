@@ -33,6 +33,7 @@ public class AutoBlueRight extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        pdp.isBlue = true;
         vp = VisionPortal.easyCreateWithDefaults(hardwareMap.get(WebcamName.class, "Webcam 1"), pdp);
         leftSlide = hardwareMap.get(DcMotor.class, "leftSlide");
         rightSlide = hardwareMap.get(DcMotor.class,"rightSlide");
@@ -61,11 +62,7 @@ public class AutoBlueRight extends LinearOpMode {
         );
 
         SequentialAction middle = new SequentialAction(
-                drive.actionBuilder(startPose).strafeToConstantHeading(new Vector2d(15, 33)).build(),
-                new InstantAction(() -> liftControl(50)),
-                drive.actionBuilder(drive.pose).strafeToLinearHeading(new Vector2d(51, 34), Math.toRadians(180)).build(),
-                new InstantAction(() -> liftControl(50)),
-                drive.actionBuilder(drive.pose).strafeToConstantHeading(endVector).build()
+
         );
         SequentialAction right = new SequentialAction(
                 drive.actionBuilder(startPose).strafeToLinearHeading(new Vector2d(24 + 9/Math.sqrt(2),  28 + 9/Math.sqrt(2)), Math.toRadians(225)).build(),

@@ -29,6 +29,15 @@ public class FieldCentric2 extends LinearOpMode {
     public static double yes = .84;
     private Servo leftSpin, rightSpin;
     private IMU imu;
+    private GamepadEx clawOp;
+
+    ArmState state = ArmState.PICK;
+
+    private enum ArmState {
+        PICK,
+        MOVE,
+        DROP
+    }
 
 
     @Override
@@ -49,6 +58,8 @@ public class FieldCentric2 extends LinearOpMode {
 
 
         driverOp = new GamepadEx(gamepad1);
+        clawOp = new GamepadEx(gamepad2);
+
         double slidePower = .7;
         imu.resetYaw();
         leftSlide.setDirection(DcMotorSimple.Direction.REVERSE); //might need to change
@@ -102,123 +113,87 @@ public class FieldCentric2 extends LinearOpMode {
                 bR.setPower(backRightPower);
             }
 
-            if(gamepad2.dpad_down) {
-                if(leftSlide.getCurrentPosition() > 1200) {
-                    leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    if (slidePower > 0) {
-                        slidePower *= -1;
+            if(clawOp.wasJustReleased(GamepadKeys.Button.DPAD_UP)) {
+                if(state == ArmState.DROP) {
+                    if(!(leftSlide.getCurrentPosition() >= 2700)) {
+                        liftControl(leftSlide.getCurrentPosition() + 200);
                     }
-                } else {
-                    liftControl(leftSlide.getCurrentPosition());
+                } else if (state == ArmState.MOVE) {
+                    up = 0;
+                    timer.reset();
+                } else if (state == ArmState.PICK) {
+                    claw.setPosition(.7);
+                    spinArm(1);
+                    liftControl(100);
+                    state = ArmState.MOVE;
                 }
-            } else if (gamepad2.dpad_up) {
-                if(leftSlide.getCurrentPosition() < 2700) {
-                    if (leftSlide.getCurrentPosition() > 350) {
-                        leftSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        rightSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                        if (slidePower < 0) {
-                            slidePower *= -1;
-                        }
-                    } else {
-                        timer.reset();
-                        up = 1;
+            } else if (clawOp.wasJustReleased(GamepadKeys.Button.DPAD_DOWN)) {
+                if(state == ArmState.MOVE) {
+                    liftControl(0);
+                    state = ArmState.PICK;
+                } else if (state == ArmState.DROP) {
+                    if(leftSlide.getCurrentPosition() >= 1000) {
+                        liftControl(leftSlide.getCurrentPosition() - 200);
                     }
-                } else {
-                    liftControl(leftSlide.getCurrentPosition());
                 }
-            } else if (gamepad2.dpad_right){
-                liftControl(leftSlide.getCurrentPosition());
-            } else if (gamepad2.dpad_left) {
-                timer.reset();
-                down = 1;
+             } else if (clawOp.wasJustReleased(GamepadKeys.Button.DPAD_LEFT)) {
+                if(state == ArmState.DROP) {
+                    down = 0;
+                    timer.reset();
+                }
+            } else if (clawOp.wasJustReleased((GamepadKeys.Button.DPAD_RIGHT))) {
+                up = 5;
+                down = 5;
+                state = ArmState.DROP;
+                liftControl(1500);
             }
-
 
             switch(up) {
+                case 0: {
+                    liftControl(1200);
+                    if(timer.seconds() > 2)
+                        up = 1;
+                    break;
+                }
                 case 1: {
-                    spinArm(.89);
-                    claw.setPosition(.7);
-                    if (timer.seconds() > 1)
-                        up = 2;
-                    break;
-                }
-                case 2: {
-                    liftControl(1400);
-                    if (leftSlide.getCurrentPosition() > 1000) {
-                        up = 3;
-                    }
-                    break;
-                }
-                case 3: {
-                    spinArm(.585);
-                    up = 4;
+                    spinArm(.70);
+                    state = ArmState.DROP;
+                    up = 2;
                     break;
                 }
             }
 
-            switch(down) {
-                case 1: {
-                    spinArm(.89);
-                    if(timer.seconds() > 1)
-                        down = 2;
-                    break;
-                }
-                case 2: {
-                    liftControl(150);
-                    if (leftSlide.getCurrentPosition() < 155) {
-                        down = 3;
-                    }
-                    break;
-                }
-                case 3: {
-                    spinArm(.87);
-                    down = 4;
-                    timer.reset();
-                    break;
-                }
-                case 4:
-                    if(timer.seconds() > .5) {
-                        liftControl(0);
-                        down = 5;
-                        timer.reset();
-                    }
-                    break;
-                case 5:
-                    if(timer.seconds() > .5) {
-                        timer.reset();
-                        down = 6;
-                    }
-                    break;
-            }
-
-            if(leftSlide.getCurrentPosition() > 2700  && slidePower > 0)
-                liftControl(leftSlide.getCurrentPosition());
-
-            if (leftSlide.getCurrentPosition() < 1300 && up > 3 && slidePower < 0 && down > 5)
-                liftControl(leftSlide.getCurrentPosition());
 
 
-            if(gamepad1.right_bumper) {
-                intake.setPower(1);
-            } else if(gamepad1.left_bumper) {
-                intake.setPower(-1);
-            } else {
-                intake.setPower(0);
-            }
-
-
-            if (gamepad2.y) {
+            if(clawOp.wasJustPressed(GamepadKeys.Button.B)) {
                 claw.setPosition(0);
             }
+            if(clawOp.wasJustPressed(GamepadKeys.Button.Y)) {
+                spinArm(1);
+            }
+            if(clawOp.wasJustReleased(GamepadKeys.Button.X)) {
+                liftControl(700);
+            }
+            switch(down) {
+                case 0: {
+                    spinArm(1);
+                    if(timer.seconds() > .8)
+                        down = 1;
+                    break;
+                }
+                case 1: {
+                    liftControl(100);
+                    state = ArmState.MOVE;
+                    down = 2;
+                    break;
+                }
+            }
 
-
+            driverOp.readButtons();
+            clawOp.readButtons();
+            isFieldCentric.readValue();
             leftSlide.setPower(slidePower);
             rightSlide.setPower(slidePower);
-
-            telemetry.addData("up: ", up);
-            telemetry.addData("spos", leftSlide.getCurrentPosition());
-            telemetry.update();
         }
     }
 

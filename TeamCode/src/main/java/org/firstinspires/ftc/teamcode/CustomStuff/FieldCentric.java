@@ -26,7 +26,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @TeleOp(name = "fieldctr")
 @Config
-@Disabled
 public class FieldCentric extends LinearOpMode {
 
     private DcMotor fL, fR, bL, bR;
@@ -35,7 +34,7 @@ public class FieldCentric extends LinearOpMode {
     private GamepadEx driverOp;
     private Servo claw;
     private Servo leftSpin, rightSpin;
-    public static double servoPos = 0;
+    public static double servoPosLift = 0, servoPosDrop = 0, servoPosPick = 0;
     private IMU imu;
 
 
@@ -63,12 +62,16 @@ public class FieldCentric extends LinearOpMode {
         bL.setDirection(DcMotorSimple.Direction.REVERSE);
         leftSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setDirection(DcMotorSimple.Direction.FORWARD);
         leftSpin.setDirection(Servo.Direction.REVERSE); // might need to change
         rightSpin.setDirection(Servo.Direction.FORWARD); // might need to change
         ToggleButtonReader isFieldCentric = new ToggleButtonReader(driverOp, GamepadKeys.Button.B);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         waitForStart();
+
+
 
 
         while (opModeIsActive()) {
@@ -136,23 +139,25 @@ public class FieldCentric extends LinearOpMode {
 
 
             if (gamepad2.right_bumper) {
-                claw.setPosition(.85);
+                claw.setPosition(1);
             } else if (gamepad2.left_bumper) {
                 claw.setPosition(0);
             }
 
             if(gamepad2.a) {
-                spinArm(.88);
+                spinArm(servoPosPick);
             } else if (gamepad2.b) {
-                spinArm(servoPos);
+                spinArm(servoPosLift = .75);
             } else if (gamepad2.x) {
-                spinArm(.585);
+                spinArm(servoPosDrop = .45);
             }
 
             leftSlide.setPower(slidePower);
             rightSlide.setPower(slidePower);
 
-            telemetry.addData("servo: ", servoPos);
+            telemetry.addData("lift: ", servoPosLift);
+            telemetry.addData("pick", servoPosPick);
+            telemetry.addData("drop", servoPosDrop);
             telemetry.addData("rightslidepos: ", rightSlide.getCurrentPosition());
             telemetry.update();
         }

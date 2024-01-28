@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.CustomStuff.testvision;
 
 import android.graphics.Canvas;
 
+import com.acmerobotics.roadrunner.Math;
+
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration;
 import org.firstinspires.ftc.vision.VisionProcessor;
 import org.opencv.core.Core;
@@ -22,8 +24,8 @@ public class pipeline implements VisionProcessor {
      * and value (same as saturation in google/openCV)
      *
      */
-    public Scalar lower = new Scalar(0, 130, 30); // HSV threshold bounds
-    public Scalar upper = new Scalar(180, 255, 255);
+    public Scalar lower = new Scalar(30, 80, 40); // HSV threshold bounds
+    public Scalar upper = new Scalar(180, 200, 150);
     private Mat hsvMat = new Mat(); // converted image
     private Mat binaryMat = new Mat(); // image analyzed after thresholding
     private Mat maskedInputMat = new Mat();
@@ -38,49 +40,11 @@ public class pipeline implements VisionProcessor {
     @Override
     public Object processFrame(Mat input, long captureTimeNanos) {
         // Convert from BGR to HSV
-        Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2YCrCb);
+        Imgproc.cvtColor(input, hsvMat, Imgproc.COLOR_RGB2HSV);
         Core.inRange(hsvMat, lower, upper, binaryMat);
-         Imgproc.rectangle(
-                input, // Buffer to draw on
-                topLeft1, // First point which defines the rectangle
-                bottomRight1, // Second point which defines the rectangle
-                new Scalar(90,255,255), // The color the rectangle is drawn in
-                -1); // Thickness of the rectangle lines
-        double w1 = 0, w2 = 0, w3 = 0;
-        // process the pixel value for each rectangle  (255 = W, 0 = B)
-        for (int i = (int) topLeft1.x; i <= bottomRight1.x; i++) {
-            for (int j = (int) topLeft1.y; j <= bottomRight1.y; j++) {
-                if (binaryMat.get(i, j)[0] == 255) {
-                    w1++;
-                }
-            }
-        }
-
-        for (int i = (int) topLeft2.x; i <= bottomRight2.x; i++) {
-            for (int j = (int) topLeft2.y; j <= bottomRight2.y; j++) {
-                if (binaryMat.get(i, j)[0] == 255) {
-                    w2++;
-                }
-            }
-        }
-
-        for (int i = (int) topLeft3.x; i <= bottomRight3.x; i ++){
-            for(int j = (int) topLeft3.y; i <= topLeft3.y; j ++){
-                if(binaryMat.get(i, j)[0] == 255){
-                    w3++;
-                }
-            }
-        }
-        // Determine object location
-        //directionals are relative to the bot position - which means I will need more than one auto and camera.
-        if (w1 > w2) {
-            location = "leftMark";
-        } else if (w1 < w2) {
-            location = "middleMark";
-        } else if((w3 > w1)){
-            location = "rightMark";
-        }
-        binaryMat.copyTo(input);
+        Mat balls = new Mat();
+        Imgproc.Canny(binaryMat, balls, 100, 300);
+        balls.copyTo(input);
         return null;
     }
     @Override
